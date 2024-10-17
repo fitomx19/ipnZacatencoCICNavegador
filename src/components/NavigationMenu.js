@@ -1,11 +1,14 @@
 // NavigationMenu.js
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const NavigationMenu = ({ escuelas, onSchoolSelect, onStartNavigation, onToggleTravelMode, travelMode, destination }) => {
+const NavigationMenu = ({ destinations, onDestinationSelect, onStartNavigation, onToggleTravelMode, travelMode, destination, onClose }) => {
   return (
     <View style={styles.menuContainer}>
+      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <MaterialIcons name="close" size={24} color="black" />
+      </TouchableOpacity>
       <View style={styles.travelModeContainer}>
         <TouchableOpacity 
           style={[styles.travelModeButton, travelMode === 'DRIVING' && styles.activeTravelMode]} 
@@ -19,16 +22,24 @@ const NavigationMenu = ({ escuelas, onSchoolSelect, onStartNavigation, onToggleT
         >
           <MaterialIcons name="directions-walk" size={24} color={travelMode === 'WALKING' ? 'white' : 'black'} />
         </TouchableOpacity>
-      </View>
-      {escuelas.map((escuela) => (
-        <TouchableOpacity
-          key={escuela.id}
-          style={styles.schoolButton}
-          onPress={() => onSchoolSelect(escuela)}
+        <TouchableOpacity 
+          style={[styles.travelModeButton, travelMode === 'BICYCLING' && styles.activeTravelMode]} 
+          onPress={() => onToggleTravelMode('BICYCLING')}
         >
-          <Text style={styles.schoolButtonText}>{escuela.name}</Text>
+          <MaterialIcons name="directions-bike" size={24} color={travelMode === 'BICYCLING' ? 'white' : 'black'} />
         </TouchableOpacity>
-      ))}
+      </View>
+      <ScrollView style={styles.destinationList}>
+        {destinations.map((dest) => (
+          <TouchableOpacity
+            key={dest.id}
+            style={styles.destinationButton}
+            onPress={() => onDestinationSelect(dest)}
+          >
+            <Text style={styles.destinationButtonText}>{dest.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
       <TouchableOpacity
         style={[styles.startButton, !destination && styles.startButtonDisabled]}
         onPress={onStartNavigation}
@@ -51,6 +62,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     width: '80%',
+    maxHeight: '80%',
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    zIndex: 1,
   },
   travelModeContainer: {
     flexDirection: 'row',
@@ -66,13 +84,16 @@ const styles = StyleSheet.create({
   activeTravelMode: {
     backgroundColor: '#007AFF',
   },
-  schoolButton: {
+  destinationList: {
+    maxHeight: 200,
+  },
+  destinationButton: {
     backgroundColor: '#f0f0f0',
     padding: 10,
     borderRadius: 5,
     marginBottom: 10,
   },
-  schoolButtonText: {
+  destinationButtonText: {
     textAlign: 'center',
   },
   startButton: {

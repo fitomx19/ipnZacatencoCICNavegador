@@ -1,13 +1,12 @@
-
 // FloatingActionButton.js
 import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const FloatingActionButton = ({ onPress }) => {
   return (
     <TouchableOpacity style={styles.fab} onPress={onPress}>
-      <Ionicons name="menu" size={24} color="white" />
+      <MaterialIcons name="menu" size={24} color="white" />
     </TouchableOpacity>
   );
 };
