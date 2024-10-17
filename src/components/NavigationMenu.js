@@ -1,9 +1,18 @@
-// NavigationMenu.js
+// components/NavigationMenu.js
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const NavigationMenu = ({ destinations, onDestinationSelect, onStartNavigation, onToggleTravelMode, travelMode, destination, onClose }) => {
+const NavigationMenu = ({ 
+  destinations, 
+  onDestinationSelect, 
+  onStartNavigation, 
+  onToggleTravelMode, 
+  travelMode, 
+  destination, 
+  onClose,
+  selectedDestinationId
+}) => {
   return (
     <View style={styles.menuContainer}>
       <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -37,6 +46,9 @@ const NavigationMenu = ({ destinations, onDestinationSelect, onStartNavigation, 
             onPress={() => onDestinationSelect(dest)}
           >
             <Text style={styles.destinationButtonText}>{dest.name}</Text>
+            {selectedDestinationId === dest.id && (
+              <MaterialIcons name="check" size={24} color="green" />
+            )}
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -56,19 +68,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
     width: '80%',
     maxHeight: '80%',
   },
   closeButton: {
-    position: 'absolute',
-    right: 10,
-    top: 10,
-    zIndex: 1,
+    alignSelf: 'flex-end',
   },
   travelModeContainer: {
     flexDirection: 'row',
@@ -88,13 +92,16 @@ const styles = StyleSheet.create({
     maxHeight: 200,
   },
   destinationButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: '#f0f0f0',
     padding: 10,
     borderRadius: 5,
     marginBottom: 10,
   },
   destinationButtonText: {
-    textAlign: 'center',
+    flex: 1,
   },
   startButton: {
     backgroundColor: '#007AFF',

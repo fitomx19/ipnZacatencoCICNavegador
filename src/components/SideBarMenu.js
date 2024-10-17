@@ -1,4 +1,4 @@
-// src/components/SidebarMenu.js
+// components/SideBarMenu.js
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';

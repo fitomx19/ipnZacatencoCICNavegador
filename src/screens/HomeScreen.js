@@ -1,40 +1,38 @@
 // HomeScreen.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Modal, Text } from 'react-native';
+import { View, StyleSheet, Modal } from 'react-native';
 import * as Location from 'expo-location';
 import axios from 'axios';
 import { GOOGLE_MAPS_API_KEY } from '@env';
 
 import MapComponent from '../components/MapComponent';
 import NavigationMenu from '../components/NavigationMenu';
-import NavigationInstructions from '../components/NavigationInstructions';
+import CurrentInstruction from '../components/CurrentInstruction';
 import FloatingActionButton from '../components/FloatingActionButton';
 import IncidentReportButton from '../components/IncidentReportButton';
-import EstimatedTimeDisplay from '../components/EstimatedTimeDisplay';
+import NavigationInfoBar from '../components/NavigationInfoBar';
 import SidebarMenu from '../components/SideBarMenu';
- 
-const destinations = [
-    { id: 1, name: 'ESCOM', coordinate: { latitude: 19.504968, longitude: -99.146936 } },
-    { id: 2, name: 'ESIA ZACATENCO', coordinate: { latitude: 19.504743, longitude: -99.133908 } },
-    { id: 3, name: 'ESFM', coordinate: { latitude: 19.500915, longitude: -99.134511 } },
-    { id: 4, name: 'METROBUS SAN JOSE DE LA ESCALERA', coordinate: { latitude: 19.52312, longitude: -99.16593 } },
-  ];
-  
-  export default function HomeScreen({ navigation, route }) {
-      const [userLocation, setUserLocation] = useState(null);
-      const [destination, setDestination] = useState(null);
-      const [selectedDestinationId, setSelectedDestinationId] = useState(null);
-      const [travelMode, setTravelMode] = useState('DRIVING');
-      const [errorMsg, setErrorMsg] = useState(null);
-      const [isNavigating, setIsNavigating] = useState(false);
-      const [navigationSteps, setNavigationSteps] = useState([]);
-      const [currentStepIndex, setCurrentStepIndex] = useState(0);
-      const [isMenuVisible, setIsMenuVisible] = useState(false);
-      const [estimatedTime, setEstimatedTime] = useState(null);
-      const watchPositionSubscription = useRef(null);
-      const [isSidebarVisible, setIsSidebarVisible] = useState(false)
+import { places } from '../data/places';
 
-      const toggleSidebar = useCallback(() => {
+export default function HomeScreen({ navigation, route }) {
+    const [userLocation, setUserLocation] = useState(null);
+    const [destination, setDestination] = useState(null);
+    const [selectedDestinationId, setSelectedDestinationId] = useState(null);
+    const [travelMode, setTravelMode] = useState('DRIVING');
+    const [errorMsg, setErrorMsg] = useState(null);
+    const [isNavigating, setIsNavigating] = useState(false);
+    const [navigationSteps, setNavigationSteps] = useState([]);
+    const [currentStepIndex, setCurrentStepIndex] = useState(0);
+    const [isMenuVisible, setIsMenuVisible] = useState(false);
+    const [estimatedTime, setEstimatedTime] = useState(null);
+    const [distance, setDistance] = useState(null);
+    const [arrivalTime, setArrivalTime] = useState(null);
+    const [trafficInfo, setTrafficInfo] = useState(null);
+    const watchPositionSubscription = useRef(null);
+
+    const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+
+    const toggleSidebar = useCallback(() => {
         setIsSidebarVisible(prevState => !prevState);
       }, []);
 
@@ -71,41 +69,53 @@ const destinations = [
           }
         };
       }, []);
-    
-      const handleDestinationSelect = (dest) => {
+
+
+      const handleDestinationSelect = useCallback((dest) => {
         setDestination(dest.coordinate);
         setSelectedDestinationId(dest.id);
         setIsNavigating(false);
         setNavigationSteps([]);
         setCurrentStepIndex(0);
         setEstimatedTime(null);
-      };
+        setTrafficInfo(null);
+        setIsMenuVisible(false);
+      }, []);
 
-      const fetchDirectionsWithTraffic = async () => {
-        if (destination) {
+      const fetchDirectionsWithTraffic = useCallback(async () => {
+        if (destination && userLocation) {
           try {
-            const response = await axios.get(
-              `https://maps.googleapis.com/maps/api/directions/json?origin=${userLocation.latitude},${userLocation.longitude}&destination=${destination.latitude},${destination.longitude}&mode=${travelMode.toLowerCase()}&departure_time=now&traffic_model=best_guess&key=${GOOGLE_MAPS_API_KEY}`
-            );
+            let url = `https://maps.googleapis.com/maps/api/directions/json?origin=${userLocation.latitude},${userLocation.longitude}&destination=${destination.latitude},${destination.longitude}&mode=${travelMode.toLowerCase()}&key=${GOOGLE_MAPS_API_KEY}&language=es`;
+            
+            if (travelMode === 'DRIVING') {
+              url += '&departure_time=now&traffic_model=best_guess';
+            }
+    
+            const response = await axios.get(url);
             
             if (response.data.status === 'OK') {
               const route = response.data.routes[0];
-              setNavigationSteps(route.legs[0].steps);
+              setNavigationSteps(route.legs[0].steps.map(step => step.html_instructions));
               setCurrentStepIndex(0);
               startLocationTracking();
               
-              // Set estimated time with traffic
-              const durationInTraffic = route.legs[0].duration_in_traffic.value;
-              const durationInMinutes = Math.round(durationInTraffic / 60);
+              const duration = travelMode === 'DRIVING' ? route.legs[0].duration_in_traffic.value : route.legs[0].duration.value;
+              const durationInMinutes = Math.round(duration / 60);
               setEstimatedTime(durationInMinutes);
-    
-              // Extract traffic information
+              
+              setDistance(route.legs[0].distance.text);
+              
+              const arrival = new Date(Date.now() + duration * 1000);
+              setArrivalTime(arrival.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+        
               const trafficSegments = route.legs[0].steps.map(step => ({
                 points: step.polyline.points,
                 duration: step.duration.value,
                 distance: step.distance.value,
               }));
               setTrafficInfo(trafficSegments);
+              setIsNavigating(true);
+              setIsMenuVisible(false);
             } else {
               alert('No se pudieron obtener las instrucciones de navegación');
             }
@@ -113,10 +123,13 @@ const destinations = [
             console.error('Error al obtener instrucciones de navegación:', error);
             alert('Error al obtener instrucciones de navegación');
           }
+        } else {
+          alert('Por favor, selecciona un destino primero');
         }
-      };
+      }, [destination, userLocation, travelMode]);
+    
 
-      
+     /* 
       const handleStartNavigation = async () => {
         if (destination) {
           setIsNavigating(true);
@@ -147,8 +160,11 @@ const destinations = [
           alert('Por favor, selecciona un destino primero');
         }
       };
-    
+    */
       const startLocationTracking = () => {
+        if (watchPositionSubscription.current) {
+          watchPositionSubscription.current.remove();
+        }
         watchPositionSubscription.current = Location.watchPositionAsync(
           {
             accuracy: Location.Accuracy.BestForNavigation,
@@ -196,9 +212,13 @@ const destinations = [
         return R * c; // Distancia en metros
       };
     
-      const toggleTravelMode = (mode) => {
+
+      const toggleTravelMode = useCallback((mode) => {
         setTravelMode(mode);
-      };
+        if (isNavigating && destination) {
+          fetchDirectionsWithTraffic();
+        }
+      }, [isNavigating, destination, fetchDirectionsWithTraffic]);
     
       const toggleMenu = () => {
         setIsMenuVisible(!isMenuVisible);
@@ -212,6 +232,23 @@ const destinations = [
           alert('No se pudo obtener tu ubicación actual. Por favor, inténtalo de nuevo.');
         }
       };
+
+      const cancelNavigation = useCallback(() => {
+        setIsNavigating(false);
+        setNavigationSteps([]);
+        setCurrentStepIndex(0);
+        setEstimatedTime(null);
+        setDistance(null);
+        setArrivalTime(null);
+        setTrafficInfo(null);
+        setDestination(null);
+        setSelectedDestinationId(null);
+        if (watchPositionSubscription.current) {
+          watchPositionSubscription.current.remove();
+        }
+        watchPositionSubscription.current = null;
+      }, []);
+    
     
       if (errorMsg) {
         return <Text>{errorMsg}</Text>;
@@ -225,38 +262,49 @@ const destinations = [
               destination={destination}
               isNavigating={isNavigating}
               travelMode={travelMode}
-              destinations={destinations}
+              destinations={places}
               selectedDestinationId={selectedDestinationId}
+              trafficInfo={trafficInfo}
             />
           )}
           
-          <FloatingActionButton onPress={toggleMenu} />
-          <IncidentReportButton onPress={reportIncident} />
-          
-          <EstimatedTimeDisplay estimatedTime={estimatedTime} />
+          {isNavigating ? (
+            <>
+              <CurrentInstruction instruction={navigationSteps[currentStepIndex]} allInstructions={navigationSteps} />
+              <IncidentReportButton style={styles.topRightButton} onPress={reportIncident} />
+              <NavigationInfoBar 
+                estimatedTime={estimatedTime}
+                distance={distance}
+                arrivalTime={arrivalTime}
+                onExit={cancelNavigation}
+              />
+            </>
+          ) : (
+            <>
+              <FloatingActionButton onPress={toggleMenu} />
+              <IncidentReportButton onPress={reportIncident} />
+            </>
+          )}
           
           <Modal
-            animationType="slide"
+            animationType="fade"
             transparent={true}
             visible={isMenuVisible}
             onRequestClose={toggleMenu}
           >
             <View style={styles.centeredView}>
               <NavigationMenu
-                destinations={destinations}
+                destinations={places}
                 onDestinationSelect={handleDestinationSelect}
-                onStartNavigation={handleStartNavigation}
+                onStartNavigation={fetchDirectionsWithTraffic}
                 onToggleTravelMode={toggleTravelMode}
                 travelMode={travelMode}
                 destination={destination}
                 onClose={toggleMenu}
+                selectedDestinationId={selectedDestinationId}
               />
             </View>
           </Modal>
-          
-          {isNavigating && navigationSteps.length > 0 && (
-            <NavigationInstructions currentInstruction={navigationSteps[currentStepIndex].html_instructions} />
-          )}
     
           <SidebarMenu 
             isVisible={isSidebarVisible}
@@ -271,24 +319,15 @@ const destinations = [
       container: {
         flex: 1,
       },
+      topRightButton: {
+        position: 'absolute',
+        top: 40,
+        right: 20,
+      },
       centeredView: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      },
-      estimatedTimeContainer: {
-        position: 'absolute',
-        top: 20,
-        left: 20,
-        right: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        padding: 10,
-        borderRadius: 5,
-      },
-      estimatedTimeText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        textAlign: 'center',
       },
     });
