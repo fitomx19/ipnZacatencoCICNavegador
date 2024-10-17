@@ -9,6 +9,7 @@ import MapComponent from '../components/MapComponent';
 import NavigationMenu from '../components/NavigationMenu';
 import NavigationInstructions from '../components/NavigationInstructions';
 import FloatingActionButton from '../components/FloatingActionButton';
+import IncidentReportButton from '../components/IncidentReportButton';
 
 const escuelas = [
   { id: 1, name: 'ESCOM', coordinate: { latitude: 19.504968, longitude: -99.146936 } },
@@ -56,7 +57,6 @@ export default function HomeScreen() {
       setIsNavigating(false);
       setNavigationSteps([]);
       setCurrentStepIndex(0);
-      setIsMenuVisible(false);
     };
   
     const handleStartNavigation = async () => {
@@ -133,12 +133,21 @@ export default function HomeScreen() {
       return R * c; // Distancia en metros
     };
   
-    const toggleTravelMode = () => {
-      setTravelMode(prevMode => prevMode === 'DRIVING' ? 'WALKING' : 'DRIVING');
+    const toggleTravelMode = (mode) => {
+      setTravelMode(mode);
     };
   
     const toggleMenu = () => {
       setIsMenuVisible(!isMenuVisible);
+    };
+  
+    const reportIncident = () => {
+      if (userLocation) {
+        console.log(`Incidente reportado en: Latitud ${userLocation.latitude}, Longitud ${userLocation.longitude}`);
+        alert('Incidente reportado. Gracias por tu colaboración.');
+      } else {
+        alert('No se pudo obtener tu ubicación actual. Por favor, inténtalo de nuevo.');
+      }
     };
   
     if (errorMsg) {
@@ -158,6 +167,7 @@ export default function HomeScreen() {
         )}
         
         <FloatingActionButton onPress={toggleMenu} />
+        <IncidentReportButton onPress={reportIncident} />
         
         <Modal
           animationType="slide"
