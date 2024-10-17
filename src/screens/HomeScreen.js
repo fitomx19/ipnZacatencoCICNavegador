@@ -1,5 +1,5 @@
 // HomeScreen.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Modal, Text } from 'react-native';
 import * as Location from 'expo-location';
 import axios from 'axios';
@@ -10,8 +10,9 @@ import NavigationMenu from '../components/NavigationMenu';
 import NavigationInstructions from '../components/NavigationInstructions';
 import FloatingActionButton from '../components/FloatingActionButton';
 import IncidentReportButton from '../components/IncidentReportButton';
-
-
+import EstimatedTimeDisplay from '../components/EstimatedTimeDisplay';
+import SidebarMenu from '../components/SideBarMenu';
+ 
 const destinations = [
     { id: 1, name: 'ESCOM', coordinate: { latitude: 19.504968, longitude: -99.146936 } },
     { id: 2, name: 'ESIA ZACATENCO', coordinate: { latitude: 19.504743, longitude: -99.133908 } },
@@ -19,7 +20,7 @@ const destinations = [
     { id: 4, name: 'METROBUS SAN JOSE DE LA ESCALERA', coordinate: { latitude: 19.52312, longitude: -99.16593 } },
   ];
   
-  export default function HomeScreen() {
+  export default function HomeScreen({ navigation, route }) {
       const [userLocation, setUserLocation] = useState(null);
       const [destination, setDestination] = useState(null);
       const [selectedDestinationId, setSelectedDestinationId] = useState(null);
@@ -31,6 +32,21 @@ const destinations = [
       const [isMenuVisible, setIsMenuVisible] = useState(false);
       const [estimatedTime, setEstimatedTime] = useState(null);
       const watchPositionSubscription = useRef(null);
+      const [isSidebarVisible, setIsSidebarVisible] = useState(false)
+
+      const toggleSidebar = useCallback(() => {
+        setIsSidebarVisible(prevState => !prevState);
+      }, []);
+
+      useEffect(() => {
+        navigation.setParams({ toggleSidebar: toggleSidebar });
+      }, [navigation, toggleSidebar]);
+
+      useEffect(() => {
+        if (route.params?.showMenu) {
+          setIsSidebarVisible(true);
+        }
+      }, [route.params?.showMenu]);
     
       useEffect(() => {
         (async () => {
@@ -64,7 +80,43 @@ const destinations = [
         setCurrentStepIndex(0);
         setEstimatedTime(null);
       };
+
+      const fetchDirectionsWithTraffic = async () => {
+        if (destination) {
+          try {
+            const response = await axios.get(
+              `https://maps.googleapis.com/maps/api/directions/json?origin=${userLocation.latitude},${userLocation.longitude}&destination=${destination.latitude},${destination.longitude}&mode=${travelMode.toLowerCase()}&departure_time=now&traffic_model=best_guess&key=${GOOGLE_MAPS_API_KEY}`
+            );
+            
+            if (response.data.status === 'OK') {
+              const route = response.data.routes[0];
+              setNavigationSteps(route.legs[0].steps);
+              setCurrentStepIndex(0);
+              startLocationTracking();
+              
+              // Set estimated time with traffic
+              const durationInTraffic = route.legs[0].duration_in_traffic.value;
+              const durationInMinutes = Math.round(durationInTraffic / 60);
+              setEstimatedTime(durationInMinutes);
     
+              // Extract traffic information
+              const trafficSegments = route.legs[0].steps.map(step => ({
+                points: step.polyline.points,
+                duration: step.duration.value,
+                distance: step.distance.value,
+              }));
+              setTrafficInfo(trafficSegments);
+            } else {
+              alert('No se pudieron obtener las instrucciones de navegación');
+            }
+          } catch (error) {
+            console.error('Error al obtener instrucciones de navegación:', error);
+            alert('Error al obtener instrucciones de navegación');
+          }
+        }
+      };
+
+      
       const handleStartNavigation = async () => {
         if (destination) {
           setIsNavigating(true);
@@ -181,13 +233,7 @@ const destinations = [
           <FloatingActionButton onPress={toggleMenu} />
           <IncidentReportButton onPress={reportIncident} />
           
-          {estimatedTime && (
-            <View style={styles.estimatedTimeContainer}>
-              <Text style={styles.estimatedTimeText}>
-                Tiempo estimado: {estimatedTime} minutos
-              </Text>
-            </View>
-          )}
+          <EstimatedTimeDisplay estimatedTime={estimatedTime} />
           
           <Modal
             animationType="slide"
@@ -211,6 +257,12 @@ const destinations = [
           {isNavigating && navigationSteps.length > 0 && (
             <NavigationInstructions currentInstruction={navigationSteps[currentStepIndex].html_instructions} />
           )}
+    
+          <SidebarMenu 
+            isVisible={isSidebarVisible}
+            onClose={() => setIsSidebarVisible(false)}
+            navigation={navigation}
+          />
         </View>
       );
     }
