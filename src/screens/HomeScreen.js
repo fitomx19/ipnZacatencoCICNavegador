@@ -66,6 +66,7 @@ export default function HomeScreen({ navigation, route }) {
         return () => {
           if (watchPositionSubscription.current) {
             watchPositionSubscription.current.remove();
+            watchPositionSubscription.current = null;
           }
         };
       }, []);
@@ -161,11 +162,13 @@ export default function HomeScreen({ navigation, route }) {
         }
       };
     */
-      const startLocationTracking = () => {
+      const startLocationTracking = useCallback(() => {
         if (watchPositionSubscription.current) {
           watchPositionSubscription.current.remove();
+          watchPositionSubscription.current = null;
         }
-        watchPositionSubscription.current = Location.watchPositionAsync(
+        
+        Location.watchPositionAsync(
           {
             accuracy: Location.Accuracy.BestForNavigation,
             timeInterval: 3000,
@@ -180,8 +183,12 @@ export default function HomeScreen({ navigation, route }) {
             });
             updateCurrentStep(location.coords);
           }
-        );
-      };
+        ).then(subscription => {
+          watchPositionSubscription.current = subscription;
+        }).catch(error => {
+          console.error("Error starting location tracking:", error);
+        });
+      }, []);
     
       const updateCurrentStep = (currentLocation) => {
         if (navigationSteps.length > 0 && currentStepIndex < navigationSteps.length - 1) {
@@ -243,7 +250,8 @@ export default function HomeScreen({ navigation, route }) {
         setTrafficInfo(null);
         setDestination(null);
         setSelectedDestinationId(null);
-        if (watchPositionSubscription.current && typeof watchPositionSubscription.current.remove === 'function') {
+        
+        if (watchPositionSubscription.current) {
           watchPositionSubscription.current.remove();
           watchPositionSubscription.current = null;
         }
