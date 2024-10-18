@@ -243,10 +243,10 @@ export default function HomeScreen({ navigation, route }) {
         setTrafficInfo(null);
         setDestination(null);
         setSelectedDestinationId(null);
-        if (watchPositionSubscription.current) {
+        if (watchPositionSubscription.current && typeof watchPositionSubscription.current.remove === 'function') {
           watchPositionSubscription.current.remove();
+          watchPositionSubscription.current = null;
         }
-        watchPositionSubscription.current = null;
       }, []);
     
     
