@@ -127,12 +127,17 @@ export default function HomeScreen({ navigation, route }) {
   const fetchDirectionsWithTraffic = useCallback(async () => {
     if (destination && origin) {
       try {
-        let url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=${travelMode.toLowerCase()}&key=${GOOGLE_MAPS_API_KEY}&language=es`;
+        const originCoords = origin.coordinate || origin;
+        const destCoords = destination.coordinate || destination;
+        
+        let url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originCoords.latitude},${originCoords.longitude}&destination=${destCoords.latitude},${destCoords.longitude}&mode=${travelMode.toLowerCase()}&key=${GOOGLE_MAPS_API_KEY}&language=es`;
         
         if (travelMode === 'DRIVING') {
           url += '&departure_time=now&traffic_model=best_guess';
         }
-
+  
+        console.log('Fetching directions with URL:', url);
+  
         const response = await axios.get(url);
         
         if (response.data.status === 'OK') {
@@ -159,16 +164,17 @@ export default function HomeScreen({ navigation, route }) {
           setIsNavigating(true);
           setIsMenuVisible(false);
         } else {
-          alert('No se pudieron obtener las instrucciones de navegación');
+          console.error('Error en la respuesta de la API:', response.data);
+          alert(`No se pudieron obtener las instrucciones de navegación: ${response.data.status}`);
         }
       } catch (error) {
         console.error('Error al obtener instrucciones de navegación:', error);
-        alert('Error al obtener instrucciones de navegación');
+        alert('Error al obtener instrucciones de navegación: ' + error.message);
       }
     } else {
       alert('Por favor, selecciona un origen y un destino primero');
     }
-  }, [destination, origin, travelMode]);
+  }, [destination, origin, travelMode, GOOGLE_MAPS_API_KEY, startLocationTracking]);
 
   const startLocationTracking = useCallback(() => {
     if (watchPositionSubscription.current) {
