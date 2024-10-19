@@ -15,119 +15,122 @@ import SidebarMenu from '../components/SideBarMenu';
 import { places } from '../data/places';
 
 export default function HomeScreen({ navigation, route }) {
-    const [userLocation, setUserLocation] = useState(null);
-    const [destination, setDestination] = useState(null);
-    const [selectedDestinationId, setSelectedDestinationId] = useState(null);
-    const [travelMode, setTravelMode] = useState('DRIVING');
-    const [errorMsg, setErrorMsg] = useState(null);
-    const [isNavigating, setIsNavigating] = useState(false);
-    const [navigationSteps, setNavigationSteps] = useState([]);
-    const [currentStepIndex, setCurrentStepIndex] = useState(0);
-    const [isMenuVisible, setIsMenuVisible] = useState(false);
-    const [estimatedTime, setEstimatedTime] = useState(null);
-    const [distance, setDistance] = useState(null);
-    const [arrivalTime, setArrivalTime] = useState(null);
-    const [trafficInfo, setTrafficInfo] = useState(null);
-    const watchPositionSubscription = useRef(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [origin, setOrigin] = useState(null);
+  const [destination, setDestination] = useState(null);
+  const [selectedDestinationId, setSelectedDestinationId] = useState(null);
+  const [travelMode, setTravelMode] = useState('DRIVING');
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navigationSteps, setNavigationSteps] = useState([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [estimatedTime, setEstimatedTime] = useState(null);
+  const [distance, setDistance] = useState(null);
+  const [arrivalTime, setArrivalTime] = useState(null);
+  const [trafficInfo, setTrafficInfo] = useState(null);
+  const watchPositionSubscription = useRef(null);
 
-    const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
-    const toggleSidebar = useCallback(() => {
-        setIsSidebarVisible(prevState => !prevState);
-      }, []);
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarVisible(prevState => !prevState);
+  }, []);
 
-      useEffect(() => {
-        navigation.setParams({ toggleSidebar: toggleSidebar });
-      }, [navigation, toggleSidebar]);
+  useEffect(() => {
+    navigation.setParams({ toggleSidebar: toggleSidebar });
+  }, [navigation, toggleSidebar]);
 
-      useEffect(() => {
-        if (route.params?.showMenu) {
-          setIsSidebarVisible(true);
-        }
-      }, [route.params?.showMenu]);
-    
-      useEffect(() => {
-        (async () => {
-          let { status } = await Location.requestForegroundPermissionsAsync();
-          if (status !== 'granted') {
-            setErrorMsg('Permission to access location was denied');
-            return;
-          }
-    
-          let location = await Location.getCurrentPositionAsync({});
-          setUserLocation({
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          });
-        })();
-    
-        return () => {
-          if (watchPositionSubscription.current) {
-            watchPositionSubscription.current.remove();
-            watchPositionSubscription.current = null;
-          }
-        };
-      }, []);
+  useEffect(() => {
+    if (route.params?.showMenu) {
+      setIsSidebarVisible(true);
+    }
+  }, [route.params?.showMenu]);
 
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permission to access location was denied');
+        return;
+      }
 
-      const handleDestinationSelect = useCallback((dest) => {
-        setDestination(dest.coordinate);
-        setSelectedDestinationId(dest.id);
-        setIsNavigating(false);
-        setNavigationSteps([]);
-        setCurrentStepIndex(0);
-        setEstimatedTime(null);
-        setTrafficInfo(null);
-        setIsMenuVisible(false);
-      }, []);
+      let location = await Location.getCurrentPositionAsync({});
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      });
+    })();
 
-      const fetchDirectionsWithTraffic = useCallback(async () => {
-        if (destination && userLocation) {
-          try {
-            let url = `https://maps.googleapis.com/maps/api/directions/json?origin=${userLocation.latitude},${userLocation.longitude}&destination=${destination.latitude},${destination.longitude}&mode=${travelMode.toLowerCase()}&key=${GOOGLE_MAPS_API_KEY}&language=es`;
-            
-            if (travelMode === 'DRIVING') {
-              url += '&departure_time=now&traffic_model=best_guess';
-            }
-    
-            const response = await axios.get(url);
-            
-            if (response.data.status === 'OK') {
-              const route = response.data.routes[0];
-              setNavigationSteps(route.legs[0].steps.map(step => step.html_instructions));
-              setCurrentStepIndex(0);
-              startLocationTracking();
-              
-              const duration = travelMode === 'DRIVING' ? route.legs[0].duration_in_traffic.value : route.legs[0].duration.value;
-              const durationInMinutes = Math.round(duration / 60);
-              setEstimatedTime(durationInMinutes);
-              
-              setDistance(route.legs[0].distance.text);
-              
-              const arrival = new Date(Date.now() + duration * 1000);
-              setArrivalTime(arrival.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+    return () => {
+      if (watchPositionSubscription.current) {
+        watchPositionSubscription.current.remove();
+        watchPositionSubscription.current = null;
+      }
+    };
+  }, []);
+
+  const handleDestinationSelect = useCallback((dest) => {
+    setDestination(dest.coordinate);
+    setSelectedDestinationId(dest.id);
+    setIsNavigating(false);
+    setNavigationSteps([]);
+    setCurrentStepIndex(0);
+    setEstimatedTime(null);
+    setTrafficInfo(null);
+  }, []);
+
+  const handleOriginSelect = useCallback((selectedOrigin) => {
+    setOrigin(selectedOrigin.coordinate);
+  }, []);
+
+  const fetchDirectionsWithTraffic = useCallback(async () => {
+    if (destination && origin) {
+      try {
+        let url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=${travelMode.toLowerCase()}&key=${GOOGLE_MAPS_API_KEY}&language=es`;
         
-              const trafficSegments = route.legs[0].steps.map(step => ({
-                points: step.polyline.points,
-                duration: step.duration.value,
-                distance: step.distance.value,
-              }));
-              setTrafficInfo(trafficSegments);
-              setIsNavigating(true);
-              setIsMenuVisible(false);
-            } else {
-              alert('No se pudieron obtener las instrucciones de navegación');
-            }
-          } catch (error) {
-            console.error('Error al obtener instrucciones de navegación:', error);
-            alert('Error al obtener instrucciones de navegación');
-          }
-        } else {
-          alert('Por favor, selecciona un destino primero');
+        if (travelMode === 'DRIVING') {
+          url += '&departure_time=now&traffic_model=best_guess';
         }
-      }, [destination, userLocation, travelMode]);
+
+        const response = await axios.get(url);
+        
+        if (response.data.status === 'OK') {
+          const route = response.data.routes[0];
+          setNavigationSteps(route.legs[0].steps.map(step => step.html_instructions));
+          setCurrentStepIndex(0);
+          startLocationTracking();
+          
+          const duration = travelMode === 'DRIVING' ? route.legs[0].duration_in_traffic.value : route.legs[0].duration.value;
+          const durationInMinutes = Math.round(duration / 60);
+          setEstimatedTime(durationInMinutes);
+          
+          setDistance(route.legs[0].distance.text);
+          
+          const arrival = new Date(Date.now() + duration * 1000);
+          setArrivalTime(arrival.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+    
+          const trafficSegments = route.legs[0].steps.map(step => ({
+            points: step.polyline.points,
+            duration: step.duration.value,
+            distance: step.distance.value,
+          }));
+          setTrafficInfo(trafficSegments);
+          setIsNavigating(true);
+          setIsMenuVisible(false);
+        } else {
+          alert('No se pudieron obtener las instrucciones de navegación');
+        }
+      } catch (error) {
+        console.error('Error al obtener instrucciones de navegación:', error);
+        alert('Error al obtener instrucciones de navegación');
+      }
+    } else {
+      alert('Por favor, selecciona un origen y un destino primero');
+    }
+  }, [destination, origin, travelMode]);
     
 
      /* 
@@ -267,6 +270,7 @@ export default function HomeScreen({ navigation, route }) {
           {userLocation && (
             <MapComponent
               userLocation={userLocation}
+              origin={origin}
               destination={destination}
               isNavigating={isNavigating}
               travelMode={travelMode}
@@ -310,6 +314,8 @@ export default function HomeScreen({ navigation, route }) {
                 destination={destination}
                 onClose={toggleMenu}
                 selectedDestinationId={selectedDestinationId}
+                userLocation={userLocation}
+                onOriginSelect={handleOriginSelect}
               />
             </View>
           </Modal>
@@ -321,6 +327,7 @@ export default function HomeScreen({ navigation, route }) {
           />
         </View>
       );
+    
     }
     
     const styles = StyleSheet.create({
