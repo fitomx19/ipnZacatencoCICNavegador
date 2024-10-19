@@ -1,6 +1,6 @@
 // HomeScreen.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Modal } from 'react-native';
+import { View, StyleSheet, Modal , Text} from 'react-native';
 import * as Location from 'expo-location';
 import axios from 'axios';
 import { GOOGLE_MAPS_API_KEY } from '@env';
@@ -12,7 +12,7 @@ import FloatingActionButton from '../components/FloatingActionButton';
 import IncidentReportButton from '../components/IncidentReportButton';
 import NavigationInfoBar from '../components/NavigationInfoBar';
 import SidebarMenu from '../components/SideBarMenu';
-import { places } from '../data/places';
+import {fetchPlaces} from '../api';
 
 export default function HomeScreen({ navigation, route }) {
   const [userLocation, setUserLocation] = useState(null);
@@ -30,6 +30,8 @@ export default function HomeScreen({ navigation, route }) {
   const [arrivalTime, setArrivalTime] = useState(null);
   const [trafficInfo, setTrafficInfo] = useState(null);
   const watchPositionSubscription = useRef(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [places, setPlaces] = useState([]);
 
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
@@ -46,6 +48,45 @@ export default function HomeScreen({ navigation, route }) {
       setIsSidebarVisible(true);
     }
   }, [route.params?.showMenu]);
+
+  useEffect(() => {
+    const loadPlacesAndLocation = async () => {
+      try {
+        // Fetch places from the backend
+        const fetchedPlaces = await fetchPlaces();
+        setPlaces(fetchedPlaces);
+
+        // Get user location
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg('Permission to access location was denied');
+          return;
+        }
+
+        let location = await Location.getCurrentPositionAsync({});
+        setUserLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
+        });
+      } catch (error) {
+        console.error('Error loading places and location:', error);
+        setErrorMsg('Error loading places and location');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPlacesAndLocation();
+
+    return () => {
+      if (watchPositionSubscription.current) {
+        watchPositionSubscription.current.remove();
+      }
+    };
+  }, []);
+
 
   useEffect(() => {
     (async () => {

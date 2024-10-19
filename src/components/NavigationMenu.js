@@ -1,7 +1,53 @@
 // components/NavigationMenu.js
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, ScrollView, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, TextInput, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+
+const Autocomplete = ({ data, value, onChange, placeholder, onSelect, includeCurrentLocation, onUseCurrentLocation }) => {
+  const [filteredData, setFilteredData] = useState([]);
+
+  useEffect(() => {
+    if (value) {
+      const filtered = data.filter(item => 
+        item.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredData(filtered);
+    } else {
+      setFilteredData([]);
+    }
+  }, [value, data]);
+
+  return (
+    <View style={styles.autocompleteContainer}>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          value={value}
+          onChangeText={onChange}
+          placeholder={placeholder}
+        />
+        {includeCurrentLocation && (
+          <TouchableOpacity onPress={onUseCurrentLocation} style={styles.locationIcon}>
+            <MaterialIcons name="my-location" size={24} color="#007AFF" />
+          </TouchableOpacity>
+        )}
+      </View>
+      {filteredData.length > 0 && (
+        <ScrollView style={styles.suggestionList} nestedScrollEnabled={true}>
+          {filteredData.map(item => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.suggestionItem}
+              onPress={() => onSelect(item)}
+            >
+              <Text>{item.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
+};
 
 const NavigationMenu = ({
   destinations,
@@ -11,20 +57,33 @@ const NavigationMenu = ({
   travelMode,
   destination,
   onClose,
-  selectedDestinationId,
   userLocation,
   onOriginSelect
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedOriginId, setSelectedOriginId] = useState(null);
+  const [originValue, setOriginValue] = useState('');
+  const [destinationValue, setDestinationValue] = useState('');
+  const [origin, setOrigin] = useState(null);
 
-  const filteredDestinations = destinations.filter(dest => 
-    dest.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleOriginSelect = (selectedOrigin) => {
+    setOriginValue(selectedOrigin.name);
+    setOrigin(selectedOrigin);
+    onOriginSelect(selectedOrigin);
+  };
 
-  const handleOriginSelect = (origin) => {
-    setSelectedOriginId(origin.id);
-    onOriginSelect(origin);
+  const handleDestinationSelect = (dest) => {
+    setDestinationValue(dest.name);
+    onDestinationSelect(dest);
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (userLocation) {
+      const currentLocationOrigin = {
+        id: 'current',
+        name: 'Mi ubicación actual',
+        coordinate: userLocation
+      };
+      handleOriginSelect(currentLocationOrigin);
+    }
   };
 
   return (
@@ -33,53 +92,23 @@ const NavigationMenu = ({
         <MaterialIcons name="close" size={24} color="black" />
       </TouchableOpacity>
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Buscar destino..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
+      <Autocomplete
+        data={destinations}
+        value={originValue}
+        onChange={setOriginValue}
+        placeholder="Seleccionar origen"
+        onSelect={handleOriginSelect}
+        includeCurrentLocation={true}
+        onUseCurrentLocation={handleUseCurrentLocation}
       />
 
-      <Text style={styles.sectionTitle}>Origen</Text>
-      <ScrollView style={styles.originList}>
-        <TouchableOpacity
-          style={[styles.originButton, selectedOriginId === 'current' && styles.selectedOrigin]}
-          onPress={() => handleOriginSelect({ id: 'current', coordinate: userLocation })}
-        >
-          <Text style={styles.originButtonText}>Mi ubicación actual</Text>
-          {selectedOriginId === 'current' && (
-            <MaterialIcons name="check" size={24} color="green" />
-          )}
-        </TouchableOpacity>
-        {destinations.map((dest) => (
-          <TouchableOpacity
-            key={dest.id}
-            style={[styles.originButton, selectedOriginId === dest.id && styles.selectedOrigin]}
-            onPress={() => handleOriginSelect(dest)}
-          >
-            <Text style={styles.originButtonText}>{dest.name}</Text>
-            {selectedOriginId === dest.id && (
-              <MaterialIcons name="check" size={24} color="green" />
-            )}
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <Text style={styles.sectionTitle}>Destino</Text>
-      <ScrollView style={styles.destinationList}>
-        {filteredDestinations.map((dest) => (
-          <TouchableOpacity
-            key={dest.id}
-            style={[styles.destinationButton, selectedDestinationId === dest.id && styles.selectedDestination]}
-            onPress={() => onDestinationSelect(dest)}
-          >
-            <Text style={styles.destinationButtonText}>{dest.name}</Text>
-            {selectedDestinationId === dest.id && (
-              <MaterialIcons name="check" size={24} color="green" />
-            )}
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <Autocomplete
+        data={destinations}
+        value={destinationValue}
+        onChange={setDestinationValue}
+        placeholder="Seleccionar destino"
+        onSelect={handleDestinationSelect}
+      />
 
       <View style={styles.travelModeContainer}>
         <TouchableOpacity
@@ -103,9 +132,9 @@ const NavigationMenu = ({
       </View>
 
       <TouchableOpacity
-        style={[styles.startButton, (!destination || !selectedOriginId) && styles.startButtonDisabled]}
+        style={[styles.startButton, (!origin || !destination) && styles.startButtonDisabled]}
         onPress={onStartNavigation}
-        disabled={!destination || !selectedOriginId}
+        disabled={!origin || !destination}
       >
         <Text style={styles.startButtonText}>Iniciar Navegación</Text>
       </TouchableOpacity>
@@ -124,58 +153,40 @@ const styles = StyleSheet.create({
   closeButton: {
     alignSelf: 'flex-end',
   },
-  searchInput: {
+  autocompleteContainer: {
+    marginBottom: 15,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    paddingHorizontal: 10,
   },
-  sectionTitle: {
-    fontWeight: 'bold',
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  originList: {
-    maxHeight: 100,
-  },
-  originButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 5,
-  },
-  selectedOrigin: {
-    backgroundColor: '#e0e0e0',
-  },
-  originButtonText: {
+  input: {
     flex: 1,
+    height: 40,
   },
-  destinationList: {
+  locationIcon: {
+    padding: 5,
+  },
+  suggestionList: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
     maxHeight: 150,
+    marginTop: 5,
   },
-  destinationButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+  suggestionItem: {
     padding: 10,
-    borderRadius: 5,
-    marginBottom: 5,
-  },
-  selectedDestination: {
-    backgroundColor: '#e0e0e0',
-  },
-  destinationButtonText: {
-    flex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
   travelModeContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 10,
+    marginTop: 15,
   },
   travelModeButton: {
     padding: 10,
@@ -190,7 +201,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
     padding: 10,
     borderRadius: 5,
-    marginTop: 10,
+    marginTop: 15,
   },
   startButtonDisabled: {
     backgroundColor: '#cccccc',
