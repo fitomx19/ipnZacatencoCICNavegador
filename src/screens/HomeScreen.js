@@ -48,6 +48,13 @@ export default function HomeScreen({ navigation, route }) {
     }
   }, [route.params?.showMenu]);
 
+  
+
+  const handleNavigation = (screenName) => {
+    onClose();
+    navigation.navigate(screenName);
+  };
+
   useEffect(() => {
     const loadPlacesAndLocation = async () => {
       try {
@@ -289,7 +296,7 @@ export default function HomeScreen({ navigation, route }) {
         onRequestClose={toggleMenu}
       >
         <View style={styles.centeredView}>
-        <NavigationMenu
+          <NavigationMenu
             destinations={places}
             onDestinationSelect={handleDestinationSelect}
             onStartNavigation={fetchDirectionsWithTraffic}

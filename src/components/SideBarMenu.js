@@ -1,18 +1,22 @@
-// components/SideBarMenu.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const SidebarMenu = ({ isVisible, onClose, navigation }) => {
   const slideAnim = React.useRef(new Animated.Value(-300)).current;
 
-  React.useEffect(() => {
+  useEffect(() => {
     Animated.timing(slideAnim, {
       toValue: isVisible ? 0 : -300,
       duration: 300,
       useNativeDriver: false,
     }).start();
-  }, [isVisible]);
+  }, [isVisible, slideAnim]);
+
+  const handleNavigation = (screenName) => {
+    onClose();
+    navigation.navigate(screenName);
+  };
 
   return (
     <Animated.View style={[styles.container, { left: slideAnim }]}>
@@ -21,25 +25,19 @@ const SidebarMenu = ({ isVisible, onClose, navigation }) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.menuItem}
-        onPress={() => {
-          navigation.navigate('Home');
-          onClose();
-        }}
+        onPress={() => handleNavigation('Home')}
       >
         <Text style={styles.menuItemText}>Inicio</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.menuItem}
-        onPress={() => {
-          navigation.navigate('Places');
-          onClose();
-        }}
+        onPress={() => handleNavigation('Places')}
       >
         <Text style={styles.menuItemText}>Lugares</Text>
       </TouchableOpacity>
     </Animated.View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
