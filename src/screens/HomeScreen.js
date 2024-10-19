@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Modal, Text, ActivityIndicator } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import axios from 'axios';
 import { GOOGLE_MAPS_API_KEY } from '@env';
@@ -39,7 +41,24 @@ export default function HomeScreen({ navigation, route }) {
   }, []);
 
   useEffect(() => {
-    navigation.setParams({ toggleSidebar: toggleSidebar });
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      // Resetear el estado de la barra lateral cuando la pantalla obtiene el foco
+      setIsSidebarVisible(false);
+    });
+
+    return unsubscribeFocus;
+  }, [navigation]);
+
+
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity onPress={toggleSidebar} style={{ marginLeft: 10 }}>
+          <Ionicons name="menu" size={24} color="black" />
+        </TouchableOpacity>
+      ),
+    });
   }, [navigation, toggleSidebar]);
 
   useEffect(() => {
