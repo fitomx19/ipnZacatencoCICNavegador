@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Modal, Text, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Modal, Text, ActivityIndicator , Alert} from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -13,7 +13,8 @@ import FloatingActionButton from '../components/FloatingActionButton';
 import IncidentReportButton from '../components/IncidentReportButton';
 import NavigationInfoBar from '../components/NavigationInfoBar';
 import SidebarMenu from '../components/SideBarMenu';
-import { fetchPlaces } from '../api';
+import { fetchPlaces , reportIncident} from '../api';
+ 
 
 export default function HomeScreen({ navigation, route }) {
   const [userLocation, setUserLocation] = useState(null);
@@ -203,6 +204,7 @@ export default function HomeScreen({ navigation, route }) {
     });
   }, []);
 
+
   const updateCurrentStep = useCallback((currentLocation) => {
     if (navigationSteps.length > 0 && currentStepIndex < navigationSteps.length - 1) {
       const nextStep = navigationSteps[currentStepIndex + 1];
@@ -243,12 +245,22 @@ export default function HomeScreen({ navigation, route }) {
     setIsMenuVisible(!isMenuVisible);
   };
 
-  const reportIncident = () => {
+ 
+  const handleReportIncident = async () => {
+    console.log('handleReportIncident called');
     if (userLocation) {
-      console.log(`Incidente reportado en: Latitud ${userLocation.latitude}, Longitud ${userLocation.longitude}`);
-      alert('Incidente reportado. Gracias por tu colaboración.');
+      console.log('UserLocation:', userLocation);
+      try {
+        const result = await reportIncident(userLocation.latitude, userLocation.longitude);
+        console.log('Incidente reportado:', result);
+        Alert.alert('Éxito', 'Incidente reportado correctamente. Gracias por tu colaboración.');
+      } catch (error) {
+        console.error('Error al reportar incidente:', error);
+        Alert.alert('Error', 'No se pudo reportar el incidente. Por favor, inténtalo de nuevo.');
+      }
     } else {
-      alert('No se pudo obtener tu ubicación actual. Por favor, inténtalo de nuevo.');
+      console.log('UserLocation is null or undefined');
+      Alert.alert('Error', 'No se pudo obtener tu ubicación actual. Por favor, inténtalo de nuevo.');
     }
   };
 
@@ -299,7 +311,7 @@ export default function HomeScreen({ navigation, route }) {
       {isNavigating ? (
         <>
           <CurrentInstruction instruction={navigationSteps[currentStepIndex]} allInstructions={navigationSteps} />
-          <IncidentReportButton style={styles.topRightButton} onPress={reportIncident} />
+          <IncidentReportButton style={styles.topRightButton} onPress={handleReportIncident} />
           <NavigationInfoBar 
             estimatedTime={estimatedTime}
             distance={distance}
@@ -310,7 +322,7 @@ export default function HomeScreen({ navigation, route }) {
       ) : (
         <>
           <FloatingActionButton onPress={toggleMenu} />
-          <IncidentReportButton onPress={reportIncident} />
+          <IncidentReportButton onPress={handleReportIncident} />
         </>
       )}
       

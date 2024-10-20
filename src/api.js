@@ -21,3 +21,19 @@ export const fetchPlacesByCategory = async (category) => {
     throw error;
   }
 };
+
+
+export const reportIncident = async (latitude, longitude, description = 'Incidente reportado') => {
+  console.log('Reporting incident:', latitude, longitude, description);
+  try {
+    const response = await axios.post(`${API_URL}/api/incidents/report`, {
+      latitude,
+      longitude,
+      description
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error reporting incident:', error);
+    throw error;
+  }
+};
