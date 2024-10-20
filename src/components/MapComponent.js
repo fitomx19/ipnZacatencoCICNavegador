@@ -24,7 +24,8 @@ const MapComponent = ({
   destination,
   isNavigating,
   travelMode,
-  trafficInfo
+  trafficInfo,
+  incidents
 }) => {
   const [showZacatenco, setShowZacatenco] = useState(false);
 
@@ -33,6 +34,23 @@ const MapComponent = ({
     if (speed > 13.89) return 'green';
     if (speed > 8.33) return 'yellow';
     return 'red';
+  };
+
+  const getIncidentIcon = (incidentType) => {
+    switch (incidentType) {
+      case 'pothole':
+        return 'warning';
+      case 'flood':
+        return 'water-damage';
+      case 'collapse':
+        return 'terrain';
+      case 'collision':
+        return 'car-crash';
+      case 'breakdown':
+        return 'car-repair';
+      default:
+        return 'report-problem';
+    }
   };
 
   const initialRegion = userLocation && userLocation.latitude && userLocation.longitude
@@ -44,14 +62,6 @@ const MapComponent = ({
       }
     : DEFAULT_LOCATION;
 
-  if (!initialRegion.latitude || !initialRegion.longitude) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>No se pudo obtener la ubicación. Por favor, verifica los permisos de ubicación.</Text>
-      </View>
-    );
-  }
-
   const toggleZacatenco = () => {
     setShowZacatenco(!showZacatenco);
   };
@@ -62,17 +72,15 @@ const MapComponent = ({
         style={styles.map}
         initialRegion={initialRegion}
         provider={PROVIDER_GOOGLE}
-        customMapStyle={[]}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+        showsCompass={true}
+        showsScale={true}
       >
-        {userLocation && userLocation.latitude && userLocation.longitude && (
-          <Marker coordinate={userLocation} title="Tu ubicación">
-            <MaterialIcons name="my-location" size={24} color="blue" />
-          </Marker>
-        )}
-        {origin && origin.id !== 'current' && origin.coordinate && origin.coordinate.latitude && origin.coordinate.longitude && (
+        {origin && origin.id !== 'current' && origin.coordinate && (
           <Marker coordinate={origin.coordinate} title={origin.name} pinColor="green" />
         )}
-        {destination && destination.coordinate && destination.coordinate.latitude && destination.coordinate.longitude && (
+        {destination && destination.coordinate && (
           <Marker coordinate={destination.coordinate} title={destination.name} pinColor="red" />
         )}
         {isNavigating && trafficInfo && trafficInfo.map((segment, index) => {
@@ -97,6 +105,18 @@ const MapComponent = ({
             strokeWidth={2}
           />
         )}
+        {isNavigating && incidents && incidents.map((incident, index) => (
+          <Marker
+            key={index}
+            coordinate={{
+              latitude: incident.latitude,
+              longitude: incident.longitude
+            }}
+            title={incident.description}
+          >
+            <MaterialIcons name={getIncidentIcon(incident.type)} size={24} color="red" />
+          </Marker>
+        ))}
       </MapView>
       <TouchableOpacity style={styles.zacatencoButton} onPress={toggleZacatenco}>
         <MaterialIcons name={showZacatenco ? "visibility-off" : "visibility"} size={24} color="white" />
@@ -111,17 +131,6 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: 'red',
   },
   zacatencoButton: {
     position: 'absolute',

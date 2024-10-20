@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Modal, Text, ActivityIndicator , Alert} from 'react-native';
+import { View, StyleSheet, Modal, Text, ActivityIndicator, Alert } from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -13,7 +13,7 @@ import FloatingActionButton from '../components/FloatingActionButton';
 import IncidentReportButton from '../components/IncidentReportButton';
 import NavigationInfoBar from '../components/NavigationInfoBar';
 import SidebarMenu from '../components/SideBarMenu';
-import { fetchPlaces , reportIncident} from '../api';
+import { fetchPlaces, reportIncident, fetchIncidents } from '../api';
 import IncidentReportModal from '../components/incidentReportModal';
  
 
@@ -36,6 +36,7 @@ export default function HomeScreen({ navigation, route }) {
   const [places, setPlaces] = useState([]);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isIncidentModalVisible, setIsIncidentModalVisible] = useState(false);
+  const [incidents, setIncidents] = useState([]);
 
   const watchPositionSubscription = useRef(null);
 
@@ -72,10 +73,23 @@ export default function HomeScreen({ navigation, route }) {
 
   
 
-  const handleNavigation = (screenName) => {
-    onClose();
-    navigation.navigate(screenName);
-  };
+  useEffect(() => {
+    const loadIncidents = async () => {
+      try {
+        const fetchedIncidents = await fetchIncidents();
+        setIncidents(fetchedIncidents);
+      } catch (error) {
+        console.error('Error loading incidents:', error);
+      }
+    };
+
+    loadIncidents();
+    // Set up an interval to refresh incidents every 5 minutes
+    const intervalId = setInterval(loadIncidents, 5 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
 
   useEffect(() => {
     const loadPlacesAndLocation = async () => {
@@ -309,7 +323,7 @@ export default function HomeScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
       {userLocation && (
-        <MapComponent
+         <MapComponent
           userLocation={userLocation}
           origin={origin}
           destination={destination}
@@ -318,6 +332,7 @@ export default function HomeScreen({ navigation, route }) {
           destinations={places}
           selectedDestinationId={selectedDestinationId}
           trafficInfo={trafficInfo}
+          incidents={isNavigating ? incidents : []} // Only pass incidents when navigating
         />
       )}
       
