@@ -16,6 +16,13 @@ const incidentSchema = new mongoose.Schema({
   reportedAt: {
     type: Date,
     default: Date.now
+  },
+  resolved: {
+    type: Boolean,
+    default: false
+  },
+  details: {
+    type: String
   }
 });
 

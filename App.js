@@ -6,6 +6,7 @@ import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from './src/screens/HomeScreen';
 import PlacesScreen from './src/screens/PlacesScreen';
+import Incidents from './src/screens/Incidents';
 
 const Stack = createStackNavigator();
 
@@ -34,6 +35,13 @@ export default function App() {
           component={PlacesScreen} 
           options={{ title: 'Lugares' }}
         />
+        <Stack.Screen 
+          name="Incidents" 
+          component={Incidents} 
+          options={{ title: 'Incidentes' }}
+        />
+
+
       </Stack.Navigator>
     </NavigationContainer>
   );

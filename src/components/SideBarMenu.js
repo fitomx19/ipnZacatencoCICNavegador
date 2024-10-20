@@ -35,6 +35,13 @@ const SidebarMenu = ({ isVisible, onClose, navigation }) => {
       >
         <Text style={styles.menuItemText}>Lugares</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={() => handleNavigation('Incidents')}
+      >
+        <Text style={styles.menuItemText}>Incidentes</Text>
+      </TouchableOpacity>
+      
     </Animated.View>
   )
 }

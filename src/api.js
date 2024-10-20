@@ -23,13 +23,14 @@ export const fetchPlacesByCategory = async (category) => {
 };
 
 
-export const reportIncident = async (latitude, longitude, description = 'Incidente reportado') => {
-  console.log('Reporting incident:', latitude, longitude, description);
+export const reportIncident = async (latitude, longitude, description = 'Incidente reportado' , details = 'Hundimiento reportado') => {
+  console.log('Reporting incident:', latitude, longitude, description, details);
   try {
     const response = await axios.post(`${API_URL}/api/incidents/report`, {
       latitude,
       longitude,
-      description
+      description,
+      details
     });
     return response.data;
   } catch (error) {
@@ -37,3 +38,13 @@ export const reportIncident = async (latitude, longitude, description = 'Inciden
     throw error;
   }
 };
+
+export const fetchIncidents = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/incidents`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching incidents:', error);
+    throw error;
+  }
+}
