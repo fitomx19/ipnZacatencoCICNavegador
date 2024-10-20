@@ -20,7 +20,7 @@ const IncidentItem = ({ item }) => {
           <Ionicons name="warning" size={24} color="#FFA500" />
         </View>
         <View style={styles.incidentInfo}>
-          <Text style={styles.incidentTitle}>{item.title}</Text>
+          <Text style={styles.incidentTitle}>{item.details}</Text>
           <Text style={styles.incidentDate}>{formatDate(item.reportedAt)}</Text>
         </View>
         <Ionicons 

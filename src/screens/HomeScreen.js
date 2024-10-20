@@ -14,6 +14,7 @@ import IncidentReportButton from '../components/IncidentReportButton';
 import NavigationInfoBar from '../components/NavigationInfoBar';
 import SidebarMenu from '../components/SideBarMenu';
 import { fetchPlaces , reportIncident} from '../api';
+import IncidentReportModal from '../components/incidentReportModal';
  
 
 export default function HomeScreen({ navigation, route }) {
@@ -34,6 +35,7 @@ export default function HomeScreen({ navigation, route }) {
   const [isLoading, setIsLoading] = useState(true);
   const [places, setPlaces] = useState([]);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const [isIncidentModalVisible, setIsIncidentModalVisible] = useState(false);
 
   const watchPositionSubscription = useRef(null);
 
@@ -246,20 +248,31 @@ export default function HomeScreen({ navigation, route }) {
   };
 
  
-  const handleReportIncident = async () => {
-    console.log('handleReportIncident called');
+  const handleReportIncident = () => {
     if (userLocation) {
-      console.log('UserLocation:', userLocation);
+      setIsIncidentModalVisible(true);
+    } else {
+      Alert.alert('Error', 'No se pudo obtener tu ubicación actual. Por favor, inténtalo de nuevo.');
+    }
+  };
+
+  const handleSubmitIncident = async (incidentType, description) => {
+    if (userLocation) {
       try {
-        const result = await reportIncident(userLocation.latitude, userLocation.longitude);
+        const result = await reportIncident(
+          userLocation.latitude,
+          userLocation.longitude,
+          incidentType,
+          description
+        );
         console.log('Incidente reportado:', result);
         Alert.alert('Éxito', 'Incidente reportado correctamente. Gracias por tu colaboración.');
+        setIsIncidentModalVisible(false);
       } catch (error) {
         console.error('Error al reportar incidente:', error);
         Alert.alert('Error', 'No se pudo reportar el incidente. Por favor, inténtalo de nuevo.');
       }
     } else {
-      console.log('UserLocation is null or undefined');
       Alert.alert('Error', 'No se pudo obtener tu ubicación actual. Por favor, inténtalo de nuevo.');
     }
   };
@@ -347,6 +360,12 @@ export default function HomeScreen({ navigation, route }) {
           />
         </View>
       </Modal>
+
+      <IncidentReportModal
+        visible={isIncidentModalVisible}
+        onClose={() => setIsIncidentModalVisible(false)}
+        onSubmit={handleSubmitIncident}
+      />
 
       <SidebarMenu 
         isVisible={isSidebarVisible}
