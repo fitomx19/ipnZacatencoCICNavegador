@@ -27,8 +27,16 @@ const SidebarMenu = ({ isVisible, onClose, navigation }) => {
         style={styles.menuItem}
         onPress={() => handleNavigation('Home')}
       >
-        <Text style={styles.menuItemText}>Inicio</Text>
+        <Text style={styles.menuItemText}>Mapa</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={() => handleNavigation('Chat')}
+      >
+        <Text style={styles.menuItemText}>Chat</Text>
+      </TouchableOpacity>
+      
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() => handleNavigation('Places')}
@@ -39,9 +47,11 @@ const SidebarMenu = ({ isVisible, onClose, navigation }) => {
         style={styles.menuItem}
         onPress={() => handleNavigation('Incidents')}
       >
-        <Text style={styles.menuItemText}>Incidentes</Text>
+        <Text style={styles.menuItemText}>Incidentes reportados</Text>
       </TouchableOpacity>
+
       
+
     </Animated.View>
   )
 }

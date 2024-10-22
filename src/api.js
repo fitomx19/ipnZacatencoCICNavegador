@@ -48,3 +48,4 @@ export const fetchIncidents = async () => {
     throw error;
   }
 }
+

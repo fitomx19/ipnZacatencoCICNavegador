@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from './src/screens/HomeScreen';
 import PlacesScreen from './src/screens/PlacesScreen';
 import Incidents from './src/screens/Incidents';
+import ChatScreen from './src/screens/ChatScreen';
 
 const Stack = createStackNavigator();
 
@@ -40,6 +41,11 @@ export default function App() {
           component={Incidents} 
           options={{ title: 'Incidentes' }}
         />
+        <Stack.Screen 
+        name="Chat" 
+        component={ChatScreen} 
+        options={{ title: 'Asistente de Navegación' }}
+      />
 
 
       </Stack.Navigator>
