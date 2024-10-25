@@ -1,31 +1,54 @@
-// utils/incidentHandler.js
-export const INCIDENT_TYPES = {
-  COLLISION: 'collision',
-  CONSTRUCTION: 'construction',
-  CLOSURE: 'closure',
-  FLOODING: 'flooding',
-  OTHER: 'other'
+export const INTENT_TYPES = {
+  REPORT_INCIDENT: 'REPORT_INCIDENT',
+  VIEW_INCIDENTS: 'VIEW_INCIDENTS',
+  NONE: 'NONE'
 };
 
-export const isReportingIntent = (message) => {
+export const detectIntent = (message) => {
   const reportKeywords = [
     'reportar',
     'informar',
     'avisar',
-    'accidente',
-    'incidente',
-    'problema'
+    'nuevo incidente',
+    'registrar incidente'
   ];
-  return reportKeywords.some(keyword => 
-    message.toLowerCase().includes(keyword)
-  );
+
+  const viewKeywords = [
+    'ver incidentes',
+    'mostrar incidentes',
+    'incidentes cercanos',
+    'que incidentes hay',
+    'cuales son los incidentes'
+  ];
+
+  const lowerMessage = message.toLowerCase();
+
+  if (reportKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    return INTENT_TYPES.REPORT_INCIDENT;
+  }
+
+  if (viewKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    return INTENT_TYPES.VIEW_INCIDENTS;
+  }
+
+  return INTENT_TYPES.NONE;
 };
 
-export const extractIncidentDetails = (message) => {
-  for (const [type, value] of Object.entries(INCIDENT_TYPES)) {
-    if (message.toLowerCase().includes(value)) {
-      return { type: value };
-    }
+export const formatIncidentsList = (incidents, userLocation) => {
+  if (!incidents || incidents.length === 0) {
+    return "No hay incidentes reportados en este momento.";
   }
-  return null;
+
+  let formattedList = "Incidentes actuales:\n\n";
+  incidents.forEach((incident, index) => {
+    const resolvedStatus = incident.resolved ? "✅ Resuelto" : "⚠️ Activo";
+    formattedList += `${index + 1}. ${resolvedStatus}\n`;
+    formattedList += `   Tipo: ${incident.description}\n`;
+    if (incident.details) {
+      formattedList += `   Detalles: ${incident.details}\n`;
+    }
+    formattedList += `   Reportado: ${new Date(incident.reportedAt).toLocaleString()}\n\n`;
+  });
+
+  return formattedList;
 };

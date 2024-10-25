@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.10.102:3000'; // Replace with your actual backend URL
+const ip = '192.168.100.171'
+const API_URL = 'http://'+ip+':3000'; // Replace with your actual backend URL
 
 export const fetchPlaces = async () => {
   try {
