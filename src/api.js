@@ -1,7 +1,9 @@
+// api/index.js
 import axios from 'axios';
+import { findClosestAddress } from '../src/utils/distance';
 
-const ip = '192.168.100.171'
-const API_URL = 'http://'+ip+':3000'; // Replace with your actual backend URL
+const ip = '192.168.10.102'
+const API_URL = 'http://'+ip+':3000';
 
 export const fetchPlaces = async () => {
   try {
@@ -23,16 +25,24 @@ export const fetchPlacesByCategory = async (category) => {
   }
 };
 
-
-export const reportIncident = async (latitude, longitude, description = 'Incidente reportado' , details = 'Hundimiento reportado') => {
+export const reportIncident = async (latitude, longitude, description = 'Incidente reportado', details = 'Hundimiento reportado') => {
   console.log('Reporting incident:', latitude, longitude, description, details);
   try {
+    // Primero obtener todos los lugares para calcular el más cercano
+    const places = await fetchPlaces();
+    
+    // Encontrar el lugar más cercano
+    const closest_address = findClosestAddress(latitude, longitude, places);
+    
+    // Enviar el reporte incluyendo la dirección más cercana
     const response = await axios.post(`${API_URL}/api/incidents/report`, {
       latitude,
       longitude,
       description,
-      details
+      details,
+      closest_address // Nuevo campo que incluye el lugar más cercano
     });
+    
     return response.data;
   } catch (error) {
     console.error('Error reporting incident:', error);
@@ -48,5 +58,4 @@ export const fetchIncidents = async () => {
     console.error('Error fetching incidents:', error);
     throw error;
   }
-}
-
+};

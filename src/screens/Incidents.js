@@ -48,6 +48,7 @@ export default function Incidents() {
   const [refreshing, setRefreshing] = React.useState(false)
 
   const loadIncidents = () => {
+    
     setRefreshing(true)
     fetchIncidents()
       .then(data => {
@@ -62,6 +63,8 @@ export default function Incidents() {
 
   React.useEffect(() => {
     loadIncidents()
+    console.log('Incidents screen mounted')
+    console.log(incidents)
   }, [])
 
   return (

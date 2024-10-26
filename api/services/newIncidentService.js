@@ -2,12 +2,13 @@ const Incident = require('../models/incidentModel');
 
 exports.reportIncident = async (req, res) => {
   try {
-    const { latitude, longitude, description, details } = req.body;
+    const { latitude, longitude, description, details, closest_address } = req.body;
     const newIncident = new Incident({
       latitude,
       longitude,
       description,
-      details
+      details,
+      closest_address
     });
     await newIncident.save();
     res.status(201).json({ message: 'Incidente reportado exitosamente', incident: newIncident });

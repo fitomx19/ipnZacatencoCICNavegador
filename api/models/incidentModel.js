@@ -21,6 +21,9 @@ const incidentSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  closest_address: {
+    type: Array
+  },
   details: {
     type: String
   }
