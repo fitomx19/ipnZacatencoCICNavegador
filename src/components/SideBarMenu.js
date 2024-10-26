@@ -4,11 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 
 const SidebarMenu = ({ isVisible, onClose, navigation }) => {
   const slideAnim = React.useRef(new Animated.Value(-300)).current;
-
+  
   useEffect(() => {
-    Animated.timing(slideAnim, {
+    Animated.spring(slideAnim, {
       toValue: isVisible ? 0 : -300,
-      duration: 300,
+      damping: 20,
+      stiffness: 90,
       useNativeDriver: false,
     }).start();
   }, [isVisible, slideAnim]);
@@ -18,66 +19,103 @@ const SidebarMenu = ({ isVisible, onClose, navigation }) => {
     navigation.navigate(screenName);
   };
 
+  const menuItems = [
+    { name: 'Home', label: 'Mapa', icon: 'map' },
+    { name: 'Chat', label: 'Chat', icon: 'chatbubbles' },
+    { name: 'Places', label: 'Lugares', icon: 'location' },
+    { name: 'Incidents', label: 'Incidentes reportados', icon: 'warning' },
+  ];
+
   return (
     <Animated.View style={[styles.container, { left: slideAnim }]}>
-      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-        <Ionicons name="close" size={24} color="black" />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => handleNavigation('Home')}
-      >
-        <Text style={styles.menuItemText}>Mapa</Text>
-      </TouchableOpacity>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Menú</Text>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Ionicons name="close" size={24} color="#333" />
+        </TouchableOpacity>
+      </View>
 
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => handleNavigation('Chat')}
-      >
-        <Text style={styles.menuItemText}>Chat</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => handleNavigation('Places')}
-      >
-        <Text style={styles.menuItemText}>Lugares</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => handleNavigation('Incidents')}
-      >
-        <Text style={styles.menuItemText}>Incidentes reportados</Text>
-      </TouchableOpacity>
-
-      
-
+      <View style={styles.menuItemsContainer}>
+        {menuItems.map((item, index) => (
+          <TouchableOpacity
+            key={item.name}
+            style={[
+              styles.menuItem,
+              index === menuItems.length - 1 && styles.lastMenuItem,
+            ]}
+            onPress={() => handleNavigation(item.name)}
+          >
+            <View style={styles.menuItemContent}>
+              <Ionicons name={item.icon} size={24} color="#555" style={styles.menuIcon} />
+              <Text style={styles.menuItemText}>{item.label}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#999" />
+          </TouchableOpacity>
+        ))}
+      </View>
     </Animated.View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: 300,
+    width: '80%',
+    maxWidth: 300,
     backgroundColor: 'white',
-    padding: 20,
-    borderRightWidth: 1,
-    borderRightColor: '#ccc',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 2,
+      height: 0,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 25,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#333',
   },
   closeButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 20,
+    padding: 5,
+  },
+  menuItemsContainer: {
+    paddingTop: 10,
   },
   menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 15,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#f0f0f0',
+  },
+  lastMenuItem: {
+    borderBottomWidth: 0,
+  },
+  menuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuIcon: {
+    marginRight: 15,
   },
   menuItemText: {
-    fontSize: 18,
+    fontSize: 16,
+    color: '#333',
   },
 });
 
