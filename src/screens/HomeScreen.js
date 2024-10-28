@@ -15,6 +15,7 @@ import NavigationInfoBar from '../components/NavigationInfoBar';
 import SidebarMenu from '../components/SideBarMenu';
 import { fetchPlaces, reportIncident, fetchIncidents } from '../api';
 import IncidentReportModal from '../components/incidentReportModal';
+import NavigationVoice from '../components/NavigationVoice';
  
 
 export default function HomeScreen({ navigation, route }) {
@@ -140,6 +141,9 @@ export default function HomeScreen({ navigation, route }) {
   const handleOriginSelect = useCallback((selectedOrigin) => {
     setOrigin(selectedOrigin);
   }, []);
+
+
+  const currentInstruction = navigationSteps[currentStepIndex]?.replace(/<[^>]*>/g, '');
 
   const fetchDirectionsWithTraffic = useCallback(async () => {
     if (destination && origin) {
@@ -323,7 +327,7 @@ export default function HomeScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
       {userLocation && (
-         <MapComponent
+        <MapComponent
           userLocation={userLocation}
           origin={origin}
           destination={destination}
@@ -332,14 +336,24 @@ export default function HomeScreen({ navigation, route }) {
           destinations={places}
           selectedDestinationId={selectedDestinationId}
           trafficInfo={trafficInfo}
-          incidents={isNavigating ? incidents : []} // Only pass incidents when navigating
+          incidents={isNavigating ? incidents : []}
         />
       )}
       
       {isNavigating ? (
         <>
-          <CurrentInstruction instruction={navigationSteps[currentStepIndex]} allInstructions={navigationSteps} />
-          <IncidentReportButton style={styles.topRightButton} onPress={handleReportIncident} />
+          <NavigationVoice 
+            instruction={navigationSteps[currentStepIndex]} 
+            isNavigating={isNavigating}
+          />
+          <CurrentInstruction 
+            instruction={navigationSteps[currentStepIndex]} 
+            allInstructions={navigationSteps} 
+          />
+          <IncidentReportButton 
+            style={styles.topRightButton} 
+            onPress={handleReportIncident} 
+          />
           <NavigationInfoBar 
             estimatedTime={estimatedTime}
             distance={distance}

@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { findClosestAddress } from '../src/utils/distance';
 
-const ip = '192.168.10.102'
+const ip = '192.168.100.16'
 const API_URL = 'http://'+ip+':3000';
 
 export const fetchPlaces = async () => {
