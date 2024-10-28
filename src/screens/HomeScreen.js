@@ -343,9 +343,11 @@ export default function HomeScreen({ navigation, route }) {
       {isNavigating ? (
         <>
           <NavigationVoice 
-            instruction={navigationSteps[currentStepIndex]} 
-            isNavigating={isNavigating}
-          />
+              instruction={navigationSteps[currentStepIndex]}
+              isNavigating={isNavigating}
+              origin={origin}
+              destination={destination}
+            />
           <CurrentInstruction 
             instruction={navigationSteps[currentStepIndex]} 
             allInstructions={navigationSteps} 
