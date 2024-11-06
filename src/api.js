@@ -2,8 +2,10 @@
 import axios from 'axios';
 import { findClosestAddress } from '../src/utils/distance';
 
-const ip = '192.168.10.103'
-const API_URL = 'http://'+ip+':3000';
+//const ip = '192.168.10.103'
+//const API_URL = 'http://'+ip+':3000';
+
+const API_URL = 'https://incidentesviales-02ad8fd9984d.herokuapp.com';
 
 export const fetchPlaces = async () => {
   try {
